@@ -173,7 +173,7 @@ function rowTags(svg,c,x,y){
 function impliedSection(){
   const sec=document.createElement("section");
   const hurdle=rate(DATA.companies[0]);
-  sec.innerHTML='<h2>What the quote is promising</h2><div class="note">The valuation run backwards. Instead of a point fair value, this is the <b>annual return you earn buying at today\u2019s price</b> if the owner-earnings path plays out. Dot = base growth; band = bear\u2192bull. Copper line = the 10Y Treasury - what you earn taking no equity risk at all; navy line = the hurdle rate set above. Left of the copper line you are being paid less than a government bond for owning a business. Click to drill in.</div>';
+  sec.innerHTML='<h2>Implied return at today\u2019s price</h2><div class="note">Annual return from buying at today\u2019s price if the base case plays out. Dot = base; band = bear\u2192bull. Copper line = 10Y Treasury; navy line = hurdle rate. Click a row to open it. Click to drill in.</div>';
   const rowsC=DATA.companies.filter(c=>!STOPPED(c)).map(c=>({c,
       base:irrOf(c,"BASE"), bear:irrOf(c,"BEAR"), bull:irrOf(c,"BULL"),
       price:A(c,"price")}))
@@ -229,12 +229,9 @@ function impliedSection(){
   const hard=DATA.companies.filter(HARD);
   if(hard.length){
     const h=document.createElement("div");
-    h.innerHTML='<h2 style="margin-top:26px">The too-hard pile</h2><div class="note">'
-      +hard.length+' of '+DATA.companies.length+' companies. A latest-year anchor is only honest when the '
-      +'owner-earnings record is steady enough for last year to represent the business. These records are not: '
-      +'losses, or year-on-year swings above 50%. No value is shown because none can be defended \u2014 the answer '
-      +'is not that they are cheap or dear, it is that this method cannot price them. Their derivations remain '
-      +'open for inspection.</div>'
+    h.innerHTML='<h2 style="margin-top:26px">Not valued: unstable earnings</h2><div class="note">'
+      +hard.length+' of '+DATA.companies.length+' companies. No value shown: the earnings record has losses or '
+      +'year-on-year swings above 50%, so the latest year is not a reliable base. Workings remain open.</div>'
       +'<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px">'
       +hard.map(c=>'<a href="#/'+c.ticker+'" style="text-decoration:none;border:1px solid var(--rule);'
         +'border-radius:8px;padding:8px 12px;background:var(--surface2)">'
@@ -256,7 +253,7 @@ function ctrlBar(c=null){
    +'<input id="drs" type="range" min="3" max="16" step="0.05" style="width:260px;accent-color:var(--accent)" value="'+(100*cur).toFixed(2)+'">'
    +'<b id="dro" style="font-family:var(--mono);font-size:15px;min-width:64px">'+(100*cur).toFixed(2)+'%</b>'
    +(c?'':'<button id="drr" class="tab'+(DR==null?" on":"")+'">reset '+(100*stored).toFixed(2)+'%</button>')
-   +'<span class="note">drag to re-discount every number and chart; release to apply. 4.66% = the 10Y Treasury, the pure Buffett frame; ~9-10% ≈ a CAPM WACC for a levered cyclical.</span></div>';
+   +'<span class="note">Drag to change the discount rate; every value and chart updates on release.</span></div>';
   const sl=w.querySelector("#drs"), out=w.querySelector("#dro");
   sl.addEventListener("input",()=>{out.textContent=parseFloat(sl.value).toFixed(2)+"%";});
   sl.addEventListener("change",()=>{DR=parseFloat(sl.value)/100; if(Math.abs(DR-stored)<1e-6)DR=null; route();});
@@ -346,16 +343,16 @@ function txt(e,x,y,str,cls,anchor){const t=S("text",{x,y,"text-anchor":anchor||"
 function homeView(){
   const app=$("#app"); app.innerHTML="";
   const hd=document.createElement("div");
-  hd.innerHTML='<div class="eyebrow">Owner earnings · Buffett 1986 · store of record: oe.db</div><h1>Owner Earnings Ledger</h1><div class="sub">Upside = base-case owner-earnings value vs the current quote, at the risk-free rate. Click a ticker to open its full derivation — every adjustment traceable to the exact sentence in the SEC filing.</div>';
+  hd.innerHTML='<div class="eyebrow">Owner-earnings valuations</div><h1>Owner Earnings Ledger</h1><div class="sub">Base-case value per share against the current price. Click a ticker for the full workings, with each adjustment linked to the SEC filing.</div>';
   app.appendChild(hd);
   app.appendChild(ctrlBar());
   app.appendChild(impliedSection());
   const sec=document.createElement("section");
-  sec.innerHTML='<h2>Upside to base-case value</h2><div class="note">Each row has its own dollar axis. Band = bear→bull value; dot = base case; red line = live quote (dotted grey = previous close); dashed copper gate = that ticker’s buy-below (its required MOS off its own base value). Quote left of the gate = actionable. Hover for numbers, click to drill in.</div>';
+  sec.innerHTML='<h2>Upside to base-case value</h2><div class="note">Each row has its own dollar axis. Band = bear→bull value; dot = base case; red line = price (dotted grey = previous close); dashed copper line = buy-below price. Hover for numbers, click to open.</div>';
   const stoppedNames=DATA.companies.filter(STOPPED);
   if(stoppedNames.length){
     const st=document.createElement("section");
-    st.innerHTML='<h2>Stopped at a gate</h2><div class="note">'+stoppedNames.length+' name'+(stoppedNames.length===1?"":"s")+' the pipeline refused to value. Each card says which step stopped, why, and what would let it resume. A stop is a ruling the run could not make on its own — never a crash swept under the rug.</div>'
+    st.innerHTML='<h2>Stopped at a gate</h2><div class="note">'+stoppedNames.length+' name'+(stoppedNames.length===1?"":"s")+' not valued. Each card gives the step that stopped and why.</div>'
       +'<div style="display:flex;flex-direction:column;gap:8px;margin-top:10px">'
       +stoppedNames.map(c=>'<a href="#/'+c.ticker+'" style="text-decoration:none;color:var(--ink);border:1px solid var(--bad);border-left-width:4px;border-radius:8px;padding:8px 12px;background:var(--surface2)">'
         +'<b>'+c.ticker+'</b> · '+(c.name||"")+' — <span style="color:var(--bad);font-family:sans-serif;font-size:12px;letter-spacing:.04em">STOPPED at '+(AS(c,"stopped_step")||"?")+'</span>'
